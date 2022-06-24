@@ -6,8 +6,8 @@ import aiohttp
 import itertools
 import time
 
-USERNAME = 'mattemill@protonmail.com'
-ACCESS_KEY = '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'
+USERNAME = ''
+ACCESS_KEY = ''
 
 
 async def get_repo_data(user, repo, session):
@@ -52,29 +52,36 @@ async def get_repos(user, repos):
     return response
 
 
-async def get_contributors_number(user, repo, repo_pages, session):
+async def get_contributors_number(user, repo, contributors_pages, session):
     contributors_num = 0
 
-    for page in range(repo_pages):
-        async with session.get(f"https://api.github.com/repos/{user}/{repo}/contributors",
-                               auth=aiohttp.BasicAuth(USERNAME, ACCESS_KEY),
-                               params={'page': page, 'per_page': 100}) as response:
-            if response.status == 200:
-                contributors_num += len(await response.json())
-            elif response.status == 204:
-                contributors_num = 0
-                break
+    async with session.get(f"https://api.github.com/repos/{user}/{repo}/contributors", params={'page': contributors_pages},
+                           auth=aiohttp.BasicAuth(USERNAME, ACCESS_KEY)) as response:
+
+        if response.status == 200:
+            if contributors_pages > 1:
+                contributors_num = len(await response.json())
+                contributors_num += (contributors_pages - 2) * 100
             else:
-                break
+                contributors_num = len(await response.json())
+        elif response.status == 204:
+            contributors_num = 0
+            return contributors_num
+        else:
+            return contributors_num
 
     return contributors_num
 
 
-async def get_contributors(user, repo, repo_pages):
+async def get_contributors(user, all_repos):
     async with aiohttp.ClientSession() as session:
         tasks = []
-        for page in range(repo_pages):
-            task = asyncio.ensure_future(get_contributors_number(user, repo, repo_pages, session))
+
+        for repo in all_repos:
+            contributors_pages = repo[4]
+            repo_name = repo[0]
+
+            task = asyncio.ensure_future(get_contributors_number(user, repo_name, contributors_pages, session))
             tasks.append(task)
 
         response = await asyncio.gather(*tasks)
@@ -98,7 +105,7 @@ def check_num_of_pages(link):
 if __name__ == '__main__':
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
-    user = 'KentBeck'
+    user = 'allegro'
 
     stop_requests = False
 
@@ -129,18 +136,22 @@ if __name__ == '__main__':
     if not stop_requests:
         all_repos = list(itertools.chain(*temp_repos))
 
+        contributors_num = asyncio.run(get_contributors(user, all_repos))
+
+        index = 0
+
         for repo in all_repos:
             repo_name = repo[0]
             repo_size = repo[1]
             branch_name = repo[2]
             branch_protection = repo[3]
-            repo_pages = repo[4]
-
-            contributors_num = asyncio.run(get_contributors(user, repo_name, repo_pages))
+            contributors_pages = contributors_num[index]
 
             del repo[-1]
 
-            final_repos.append([repo_name, repo_size, contributors_num[0], branch_name, branch_protection])
+            final_repos.append([repo_name, repo_size, contributors_num[index], branch_name, branch_protection])
+
+            index += 1
 
         x = PrettyTable()
 
