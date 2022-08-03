@@ -1,7 +1,6 @@
 import re
 import requests
 from prettytable import PrettyTable
-import time
 
 # Insert your GitHub API username and access key below
 USERNAME = ''
