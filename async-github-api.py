@@ -4,7 +4,6 @@ from prettytable import PrettyTable
 import asyncio
 import aiohttp
 import itertools
-import time
 
 # Insert your GitHub API username and access key below
 USERNAME = ''
