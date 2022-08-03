@@ -6,6 +6,7 @@ import aiohttp
 import itertools
 import time
 
+# Insert your GitHub API username and access key below
 USERNAME = ''
 ACCESS_KEY = ''
 
@@ -105,7 +106,8 @@ def check_num_of_pages(link):
 if __name__ == '__main__':
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
-    user = 'allegro'
+    # Insert name of the user you want to fetch data from
+    user = 'finematte'
 
     stop_requests = False
 
@@ -121,7 +123,6 @@ if __name__ == '__main__':
     temp_repos = []
     final_repos = []
 
-    start = time.time()
     for current_page in pages:
         repo_request = requests.get(f"https://api.github.com/users/{user}/repos", auth=(USERNAME, ACCESS_KEY),
                                     params={'page': current_page, 'per_page': 100})
@@ -160,7 +161,3 @@ if __name__ == '__main__':
         x.add_rows(final_repos)
 
         print(x)
-
-    end = time.time()
-
-    print('Seconds: ', end - start)
